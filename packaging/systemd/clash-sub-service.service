@@ -1,0 +1,21 @@
+[Unit]
+Description=Clash Subscription Background Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+Group=YOUR_GROUP
+WorkingDirectory=/ABS/PATH/TO/clash_sub_service
+Environment=PYTHONPATH=/ABS/PATH/TO/clash_sub_service/src
+ExecStart=/ABS/PATH/TO/clash-sub-service serve -c /ABS/PATH/TO/config.yaml
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target

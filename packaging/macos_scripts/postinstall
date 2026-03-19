@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_NAME="clash-sub-service"
+LABEL="com.lyratec.clash-sub-service"
+CONFIG_DIR="/usr/local/etc/$APP_NAME"
+CONFIG_FILE="$CONFIG_DIR/config.yaml"
+EXAMPLE_FILE="$CONFIG_DIR/config.example.yaml"
+LOG_DIR="/usr/local/var/log/$APP_NAME"
+PLIST_FILE="/Library/LaunchDaemons/$LABEL.plist"
+
+mkdir -p "$CONFIG_DIR" "$LOG_DIR"
+
+if [[ ! -f "$CONFIG_FILE" && -f "$EXAMPLE_FILE" ]]; then
+  cp "$EXAMPLE_FILE" "$CONFIG_FILE"
+fi
+
+chmod 644 "$PLIST_FILE"
+chown root:wheel "$PLIST_FILE"
+chmod 755 "$LOG_DIR"
+
+launchctl bootout system "$PLIST_FILE" >/dev/null 2>&1 || true
+launchctl bootstrap system "$PLIST_FILE"
+launchctl enable "system/$LABEL" >/dev/null 2>&1 || true
+launchctl kickstart -k "system/$LABEL" >/dev/null 2>&1 || true

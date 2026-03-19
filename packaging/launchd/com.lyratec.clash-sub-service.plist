@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.lyratec.clash-sub-service</string>
+
+  <key>UserName</key>
+  <string>root</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/clash-sub-service</string>
+    <string>serve</string>
+    <string>-c</string>
+    <string>/usr/local/etc/clash-sub-service/config.yaml</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/usr/local/lib/clash-sub-service</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/usr/local/var/log/clash-sub-service/launchd.stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/usr/local/var/log/clash-sub-service/launchd.stderr.log</string>
+</dict>
+</plist>

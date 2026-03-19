@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clash-sub-service"
+version = "0.1.0"
+description = "Background service for fetching subscriptions and serving Clash YAML."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6.0", "colorlog>=6.8.2", "requests>=2.31.0", "watchdog>=4.0.0"]
+
+[project.scripts]
+clash-sub-service = "cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["app", "cli", "exit_codes"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

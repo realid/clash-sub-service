@@ -1,0 +1,29 @@
+subscription:
+  url: "https://example.invalid/subscription"
+  timeout: 15
+
+output:
+  path: "/usr/local/var/lib/clash-sub-service/clash.yaml"
+
+server:
+  listen: "127.0.0.1"
+  port: 9095
+  refresh_interval: 300
+
+clash:
+  port: 1082
+  allow_lan: true
+
+logging:
+  level: "INFO"
+  format: "text"
+  stdout: true
+  color: true
+  access_log: true
+  file:
+    enabled: true
+    path: "/usr/local/var/log/clash-sub-service/app.log"
+    rotate:
+      type: "size"
+      max_bytes: 10485760
+      backup_count: 5
