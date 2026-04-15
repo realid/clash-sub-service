@@ -21,5 +21,7 @@ class SensitiveURLFilter(logging.Filter):
         if isinstance(record.msg, str):
             record.msg = sanitize_url(record.msg)
         if record.args:
-            record.args = tuple(sanitize_url(arg) if isinstance(arg, str) else arg for arg in record.args)
+            record.args = tuple(
+                sanitize_url(arg) if isinstance(arg, str) else arg for arg in record.args
+            )
         return True

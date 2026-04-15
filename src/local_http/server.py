@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class LocalHTTPServer:
     def __init__(
         self,
-        state: "ServiceState",
+        state: ServiceState,
         *,
         listen: str,
         port: int,

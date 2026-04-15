@@ -15,7 +15,7 @@ from core.parser import (
 
 class ParserTestCase(unittest.TestCase):
     def test_b64decode_any_supports_missing_padding(self) -> None:
-        encoded = base64.b64encode("hello".encode("utf-8")).decode("utf-8").rstrip("=")
+        encoded = base64.b64encode(b"hello").decode("utf-8").rstrip("=")
         decoded = b64decode_any(encoded)
         self.assertEqual(decoded, b"hello")
 

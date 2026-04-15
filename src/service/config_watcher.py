@@ -1,33 +1,44 @@
 from __future__ import annotations
 
 import logging
+import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, cast
 
 from config.loader import ConfigError, load_config
 
+_watchdog_events: ModuleType | None
+_watchdog_observers: ModuleType | None
 try:
-    from watchdog.events import FileSystemEventHandler
-    from watchdog.observers import Observer
+    import watchdog.events as _watchdog_events
+    import watchdog.observers as _watchdog_observers
 except ModuleNotFoundError:  # pragma: no cover - environment dependent
-    FileSystemEventHandler = object
-    Observer = None
+    _watchdog_events = None
+    _watchdog_observers = None
 
 if TYPE_CHECKING:
+    from watchdog.events import FileSystemEvent
+
     from app import RuntimeConfigManager
     from config.schema import AppConfig
+else:
+    FileSystemEvent = Any
+
+WATCHDOG_EVENTS_MODULE: ModuleType | None = _watchdog_events
+WATCHDOG_OBSERVERS_MODULE: ModuleType | None = _watchdog_observers
 
 
 class ConfigWatcher:
     def __init__(
         self,
-        manager: "RuntimeConfigManager",
+        manager: RuntimeConfigManager,
         *,
         poll_interval: float = 1.0,
         debounce_interval: float = 0.5,
-        loader: Callable[[str], "AppConfig"] = load_config,
+        loader: Callable[[str], AppConfig] = load_config,
         on_reload: Callable[[], None] | None = None,
     ) -> None:
         self._manager = manager
@@ -37,7 +48,7 @@ class ConfigWatcher:
         self._on_reload = on_reload
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
-        self._observer = None
+        self._observer: Any = None
         self._debounce_timer: threading.Timer | None = None
         self._debounce_lock = threading.Lock()
         self._logger = logging.getLogger(__name__)
@@ -47,11 +58,15 @@ class ConfigWatcher:
         if self._observer is not None or (self._thread and self._thread.is_alive()):
             return
         self._stop_event.clear()
-        if Observer is not None:
+        if WATCHDOG_OBSERVERS_MODULE is not None:
             self._start_watchdog()
-            self._logger.info("配置文件监控已启动 path=%s backend=watchdog", self._manager.config_path)
+            self._logger.info(
+                "配置文件监控已启动 path=%s backend=watchdog", self._manager.config_path
+            )
             return
-        self._thread = threading.Thread(target=self._run_polling, name="config-watcher", daemon=True)
+        self._thread = threading.Thread(
+            target=self._run_polling, name="config-watcher", daemon=True
+        )
         self._thread.start()
         self._logger.info("配置文件监控已启动 path=%s backend=polling", self._manager.config_path)
 
@@ -68,12 +83,15 @@ class ConfigWatcher:
         if self._thread:
             self._thread.join(timeout=5)
             self._thread = None
-        self._logger.info("配置文件监控已停止")
+            self._logger.info("配置文件监控已停止")
 
     def _start_watchdog(self) -> None:
-        assert Observer is not None
-        observer = Observer()
-        observer.schedule(_ConfigFileEventHandler(self), str(self._config_path.parent), recursive=False)
+        assert WATCHDOG_OBSERVERS_MODULE is not None
+        observer_cls = WATCHDOG_OBSERVERS_MODULE.Observer
+        observer = observer_cls()
+        observer.schedule(
+            _ConfigFileEventHandler(self), str(self._config_path.parent), recursive=False
+        )
         observer.start()
         self._observer = observer
 
@@ -109,7 +127,9 @@ class ConfigWatcher:
         with self._debounce_lock:
             if self._debounce_timer is not None:
                 self._debounce_timer.cancel()
-            self._debounce_timer = threading.Timer(self._debounce_interval, self._run_debounced_check)
+            self._debounce_timer = threading.Timer(
+                self._debounce_interval, self._run_debounced_check
+            )
             self._debounce_timer.daemon = True
             self._debounce_timer.start()
 
@@ -120,22 +140,21 @@ class ConfigWatcher:
             self._check_once()
 
 
-class _ConfigFileEventHandler(FileSystemEventHandler):
+class _ConfigFileEventHandler:
     def __init__(self, watcher: ConfigWatcher) -> None:
-        super().__init__()
         self._watcher = watcher
 
-    def on_modified(self, event) -> None:  # type: ignore[override]
+    def on_modified(self, event: FileSystemEvent) -> None:
         if getattr(event, "is_directory", False):
             return
-        self._watcher._handle_watchdog_event(event.src_path)
+        self._watcher._handle_watchdog_event(os.fsdecode(cast(Any, event).src_path))
 
-    def on_created(self, event) -> None:  # type: ignore[override]
+    def on_created(self, event: FileSystemEvent) -> None:
         if getattr(event, "is_directory", False):
             return
-        self._watcher._handle_watchdog_event(event.src_path)
+        self._watcher._handle_watchdog_event(os.fsdecode(cast(Any, event).src_path))
 
-    def on_moved(self, event) -> None:  # type: ignore[override]
+    def on_moved(self, event: FileSystemEvent) -> None:
         if getattr(event, "is_directory", False):
             return
-        self._watcher._handle_watchdog_event(event.dest_path)
+        self._watcher._handle_watchdog_event(os.fsdecode(cast(Any, event).dest_path))

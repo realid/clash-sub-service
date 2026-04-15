@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
+from collections.abc import Callable
 from pathlib import Path
 
 from app_logging.setup import configure_logging
@@ -46,7 +47,7 @@ class RuntimeConfigManager:
         return (stat_result.st_mtime_ns, stat_result.st_size)
 
 
-def build_refresh_callable(manager: RuntimeConfigManager):
+def build_refresh_callable(manager: RuntimeConfigManager) -> Callable[[], tuple[int, str]]:
     def refresh() -> tuple[int, str]:
         config = manager.current()
         body = fetch_subscription_text(

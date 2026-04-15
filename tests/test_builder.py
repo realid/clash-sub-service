@@ -60,7 +60,7 @@ class ClashBuilderTestCase(unittest.TestCase):
         self.assertIn("demo", result.yaml_text)
 
     def test_generate_from_subscription_body_rejects_empty_result(self) -> None:
-        encoded = base64.b64encode("not-a-node".encode("utf-8")).decode("utf-8")
+        encoded = base64.b64encode(b"not-a-node").decode("utf-8")
 
         with self.assertRaises(GenerationError) as ctx:
             generate_from_subscription_body(encoded)

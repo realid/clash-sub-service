@@ -90,11 +90,13 @@ build_nuitka_args() {
 --include-package=local_http
 --include-package=app_logging
 --include-package=requests
---include-package=watchdog
 --include-package=yaml
 --python-flag=no_site
 --module-parameter=tk-inter=no
 EOF
+  if [[ "$(uname -s)" != "Darwin" ]] && has_python_module watchdog; then
+    printf '%s\n' "--include-package=watchdog"
+  fi
   if has_python_module colorlog; then
     printf '%s\n' "--include-package=colorlog"
   fi

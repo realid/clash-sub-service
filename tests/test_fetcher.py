@@ -57,6 +57,24 @@ class FetcherTestCase(unittest.TestCase):
 
         self.assertIn("请求失败", str(ctx.exception))
 
+    @patch("core.fetcher.requests.Session.get")
+    def test_fetch_subscription_text_tls_eof_retries_with_tls12(self, mock_get: Mock) -> None:
+        response = Mock()
+        response.ok = True
+        response.status_code = 200
+        response.text = "dm1lc3M6Ly90ZXN0"
+        mock_get.side_effect = [
+            requests.exceptions.SSLError(
+                "[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol"
+            ),
+            response,
+        ]
+
+        body = fetch_subscription_text("https://example.invalid/subscription", timeout=3)
+
+        self.assertEqual(body, "dm1lc3M6Ly90ZXN0")
+        self.assertEqual(mock_get.call_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
